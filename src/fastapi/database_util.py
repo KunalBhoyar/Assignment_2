@@ -1,17 +1,25 @@
 import sqlite3
 import json
+<<<<<<< HEAD
+import boto3
+=======
+from dotenv import load_dotenv
+import os
+>>>>>>> e7335f0baeb1ba9a9c3e0cf5fcf2a4ca0e397d16
 
+load_dotenv()
 class database_methods():
     def __init__(self):
-        conn = sqlite3.connect('src/data/USER_DATA.db')
+        print (os.environ.get('DbUser'))
+        conn = sqlite3.connect(os.environ.get('DbUser'))
         self.cursor_user = conn.cursor()
         self.cursor_user.execute('''CREATE TABLE IF NOT EXISTS USER (id INTEGER PRIMARY KEY AUTOINCREMENT ,username TEXT NOT NULL, password TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-        conn_geo = sqlite3.connect('src/data/GEOSPATIAL_DATA.db')
+        conn_geo = sqlite3.connect(os.environ.get('DbGeo'))
         conn.commit()
         self.cursor_geo = conn_geo.cursor()
         
     def create_connection(self,database_name):
-        conn = sqlite3.connect(f'src/data/{database_name}.db')
+        conn = sqlite3.connect(os.environ.get('DbPath')+"/"+database_name+".db")
         cursor = conn.cursor()
         return conn,cursor
         
@@ -108,3 +116,26 @@ class database_methods():
         cursor_geo.execute(f'SELECT lat, lon from nexrad_sites_data')
         rows=cursor_geo.fetchall()
         return self.return_json(rows,cursor_geo)
+    
+    def downloadFileAndMove(self, fileName, AWS_ACCESS_KEY_ID ,AWS_SECRET_ACCESS_KEY):
+        print("FileName", fileName, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+        try:
+            session = boto3.Session(
+                aws_access_key_id = AWS_ACCESS_KEY_ID,
+                aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+            )
+            
+            s3 = session.resource('s3')
+
+            copy_source = {
+                'Bucket': "noaa-goes18",
+                'Key': fileName
+            }
+
+            bucket = s3.Bucket('damg7245-s3-storage')
+            
+            bucket.copy(copy_source, fileName)
+            return True
+        except Exception as e:
+            print(e)
+            return False

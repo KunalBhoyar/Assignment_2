@@ -21,7 +21,11 @@ class AuthHandler():
 
     def encode_token(self, user_id):
         payload = {
-            'exp': datetime.utcnow() + timedelta(days=0, minutes=5),
+<<<<<<< HEAD
+            'exp': datetime.utcnow() + timedelta(days=0, minutes=30),
+=======
+            'exp': datetime.utcnow() + timedelta(days=0, minutes=15),
+>>>>>>> e7335f0baeb1ba9a9c3e0cf5fcf2a4ca0e397d16
             'iat': datetime.utcnow(),
             'sub': user_id
         }

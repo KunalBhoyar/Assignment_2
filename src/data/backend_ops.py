@@ -23,14 +23,14 @@ def geos_query_files(product, year, day, hour):
 
     for content in contents:
         # print(content['Key'])
-        files.append(content['Key'])
-        # files.append(content['Key'].split("/")[-1])
+        # files.append(content['Key'])
+        files.append(content['Key'].split("/")[-1])
 
     return files
 
 
 def downloadFileAndMove(fileName, AWS_ACCESS_KEY_ID ,AWS_SECRET_ACCESS_KEY):
-    # print("FileName", fileName)
+    print("FileName", fileName, AWS_ACCESS_KEY_ID ,AWS_SECRET_ACCESS_KEY)
     try:
         session = boto3.Session(
             aws_access_key_id = AWS_ACCESS_KEY_ID,
