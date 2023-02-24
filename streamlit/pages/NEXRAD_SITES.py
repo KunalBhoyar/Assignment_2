@@ -3,6 +3,7 @@ import pandas as pd
 
 import importlib.util
 import os
+from frontendAPICalls import *
 
 current_directory = os.getcwd()
 
@@ -19,15 +20,17 @@ spec_ops.loader.exec_module(ops)
 
 st.title('Locations of all NEXRAD sites')
 
-sites_data = db_methods.get_nexrad_sites()
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
 
-sites_data.head()
+def main():
+    sites_data = pd.DataFrame.from_dict(api_getNEXRADSitesLoc(st.session_state.logged_in))
 
-sitedf = pd.DataFrame(
-    {
-        "lat": sites_data['Lat'],
-        "lon": sites_data['Lon']
-    }
-)
+    sites_data.rename(columns={"Lat": "lat", "Lon": "lon"}, inplace=True)
 
-st.map(sitedf)
+    st.map(sites_data)
+
+if st.session_state.logged_in:
+    main()
+else:
+    st.write('Please login to access this page!')

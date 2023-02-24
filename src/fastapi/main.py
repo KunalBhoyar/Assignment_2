@@ -7,12 +7,15 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from .user_auth import AuthHandler
 from .database_util import database_methods
 from .aws_s3_copy import s3_copy
+import os
+from dotenv import load_dotenv
 
 app = FastAPI()
 auth_handler = AuthHandler()
 users = []
 db_method=database_methods()
 copy_obj=s3_copy()
+load_dotenv()
 
 class UserInput(BaseModel):
     year:int
@@ -23,7 +26,6 @@ class UserInput(BaseModel):
 class UserData(BaseModel):
     username:str
     password: str
-
 
 @app.get("/fetch_url_nexrad",status_code=status.HTTP_200_OK)
 async def fetch_url(userinput: UserInput,username=Depends(auth_handler.auth_wrapper)):
@@ -89,8 +91,32 @@ def goes_year(year:int, month:int, day:int,username=Depends(auth_handler.auth_wr
 def goes_year(username=Depends(auth_handler.auth_wrapper)):
     return db_method.get_nexrad_sites()
 
-@app.get('/copy_file_s3/{source_bucket_name}/{key}',status_code=status.HTTP_200_OK)
-def copy_file_s3(source_bucket_name:str,key:str):
-    status_copy=copy_obj.copy_file_into_s3(source_bucket_name,key)
+@app.get('/copy_file_s3/{source_bucket_name}/{product}/{year}/{day}/{hour}/{filename}',status_code=status.HTTP_200_OK)
+def copy_file_s3(source_bucket_name:str,product:str,year,day,hour,filename:str,username=Depends(auth_handler.auth_wrapper)):
+    file = f'{product}/{year}/{day}/{hour}/{filename}'
+    status_copy=copy_obj.downloadFileAndMove(source_bucket_name, file, os.environ.get('AWS_ACCESS_KEY_ID'), os.environ.get('AWS_SECRET_ACCESS_KEY'))
     if status_copy == False:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid request')
+    
+@app.get('/copy_nexrad_file_s3/{source_bucket_name}/{year}/{month}/{day}/{site}/{filename}',status_code=status.HTTP_200_OK)
+def copy_file_s3(source_bucket_name:str,year,month,day,site,filename:str,username=Depends(auth_handler.auth_wrapper)):    
+    file = f'{year}/{month}/{day}/{site}/{filename}'
+    status_copy=copy_obj.downloadFileAndMove(source_bucket_name, file, os.environ.get('AWS_ACCESS_KEY_ID'), os.environ.get('AWS_SECRET_ACCESS_KEY'))
+    if status_copy == False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid request')
+
+@app.get('/get_goes_by_filename/{source_bucket_name}/{filename}',status_code=status.HTTP_200_OK)
+def copy_file_s3(source_bucket_name:str, filename:str,username=Depends(auth_handler.auth_wrapper)):
+    file_prefix=copy_obj.get_geos_file_link(filename, os.environ.get('AWS_ACCESS_KEY_ID'), os.environ.get('AWS_SECRET_ACCESS_KEY'))
+    if file_prefix == False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid request')
+    else:
+        return file_prefix
+    
+@app.get('/nexrad_query_files/{year}/{month}/{day}/{site}',status_code=status.HTTP_200_OK)
+def copy_file_s3(year, month, day, site,username=Depends(auth_handler.auth_wrapper)):
+    file_prefix=copy_obj.nexrad_query_files(year, month, day, site)
+    if file_prefix == False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid request')
+    else:
+        return file_prefix

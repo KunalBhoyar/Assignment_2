@@ -1,5 +1,6 @@
 import sqlite3
 import json
+import boto3
 
 class database_methods():
     def __init__(self):
@@ -108,3 +109,26 @@ class database_methods():
         cursor_geo.execute(f'SELECT lat, lon from nexrad_sites_data')
         rows=cursor_geo.fetchall()
         return self.return_json(rows,cursor_geo)
+    
+    def downloadFileAndMove(self, fileName, AWS_ACCESS_KEY_ID ,AWS_SECRET_ACCESS_KEY):
+        print("FileName", fileName, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+        try:
+            session = boto3.Session(
+                aws_access_key_id = AWS_ACCESS_KEY_ID,
+                aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+            )
+            
+            s3 = session.resource('s3')
+
+            copy_source = {
+                'Bucket': "noaa-goes18",
+                'Key': fileName
+            }
+
+            bucket = s3.Bucket('damg7245-s3-storage')
+            
+            bucket.copy(copy_source, fileName)
+            return True
+        except Exception as e:
+            print(e)
+            return False
