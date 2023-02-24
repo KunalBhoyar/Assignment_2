@@ -1,17 +1,21 @@
 import sqlite3
 import json
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 class database_methods():
     def __init__(self):
-        conn = sqlite3.connect('src/data/USER_DATA.db')
+        print (os.environ.get('DbUser'))
+        conn = sqlite3.connect(os.environ.get('DbUser'))
         self.cursor_user = conn.cursor()
         self.cursor_user.execute('''CREATE TABLE IF NOT EXISTS USER (id INTEGER PRIMARY KEY AUTOINCREMENT ,username TEXT NOT NULL, password TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-        conn_geo = sqlite3.connect('src/data/GEOSPATIAL_DATA.db')
+        conn_geo = sqlite3.connect(os.environ.get('DbGeo'))
         conn.commit()
         self.cursor_geo = conn_geo.cursor()
         
     def create_connection(self,database_name):
-        conn = sqlite3.connect(f'src/data/{database_name}.db')
+        conn = sqlite3.connect(os.environ.get('DbPath')+"/"+database_name+".db")
         cursor = conn.cursor()
         return conn,cursor
         

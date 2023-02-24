@@ -4,9 +4,9 @@ from typing import Optional
 from datetime import datetime, timedelta
 from typing import Union
 from fastapi import Depends, FastAPI, HTTPException, status
-from .user_auth import AuthHandler
-from .database_util import database_methods
-from .aws_s3_copy import s3_copy
+from user_auth import AuthHandler
+from database_util import database_methods
+from aws_s3_copy import s3_copy
 
 app = FastAPI()
 auth_handler = AuthHandler()
@@ -90,7 +90,19 @@ def goes_year(username=Depends(auth_handler.auth_wrapper)):
     return db_method.get_nexrad_sites()
 
 @app.get('/copy_file_s3/{source_bucket_name}/{key}',status_code=status.HTTP_200_OK)
-def copy_file_s3(source_bucket_name:str,key:str):
+def copy_file_s3(source_bucket_name:str,key:str,username=Depends(auth_handler.auth_wrapper)):
     status_copy=copy_obj.copy_file_into_s3(source_bucket_name,key)
     if status_copy == False:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid request')
+    
+@app.get("/healthz",status_code=status.HTTP_200_OK)
+def hello():
+    return {"status": "connected"}
+
+@app.get("/",status_code=status.HTTP_200_OK)
+def hello():
+    return {"status": "connected"}
+    
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
