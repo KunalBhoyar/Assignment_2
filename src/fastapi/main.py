@@ -50,10 +50,13 @@ def register(auth_details: UserData):
 @app.post('/login',status_code=status.HTTP_200_OK)
 def login(auth_details: UserData):
     fetch_user_status=db_method.fetch_user(auth_details.username)
-    if (fetch_user_status == 'no_user_found' or not auth_handler.verify_password(auth_details.password, fetch_user_status[0]['password'])):
+    if isinstance(fetch_user_status, str) and fetch_user_status == 'no_user_found':
+        raise HTTPException(status_code=401, detail='Invalid username and/or password')
+    if not auth_handler.verify_password(auth_details.password, fetch_user_status[0]['password']):
         raise HTTPException(status_code=401, detail='Invalid username and/or password')
     token = auth_handler.encode_token(fetch_user_status[0]['username'])
     return { 'token': token }
+
 
 
 @app.get('/geos_get_year',status_code=status.HTTP_200_OK)
